@@ -1,9 +1,9 @@
 /*!
  * ====================================================
- * Kity Minder Core - v1.4.50 - 2018-10-23
+ * Kity Minder Core - v1.4.51 - 2021-07-15
  * https://github.com/fex-team/kityminder-core
  * GitHub: https://github.com/fex-team/kityminder-core.git 
- * Copyright (c) 2018 Baidu FEX; Licensed BSD-3-Clause
+ * Copyright (c) 2021 Baidu FEX; Licensed BSD-3-Clause
  * ====================================================
  */
 
@@ -37,6 +37,69 @@ var _p = {
     }
 };
 
+//src/connect/arc_tp.js
+/**
+ *
+ * 圆弧连线
+ *
+ * @author: along
+ * @copyright: bpd729@163.com , 2015
+ */_p[0] = {
+    value: function(require, exports, module) {
+        var kity = _p.r(17);
+        var connect = _p.r(11);
+        var connectMarker = new kity.Marker().pipe(function() {
+            var r = 7;
+            var dot = new kity.Circle(r - 1);
+            this.addShape(dot);
+            this.setRef(r - 1, 0).setViewBox(-r, -r, r + r, r + r).setWidth(r).setHeight(r);
+            this.dot = dot;
+            this.node.setAttribute("markerUnits", "userSpaceOnUse");
+        });
+        /**
+     * 天盘图连线除了连接当前节点和前一个节点外, 还需要渲染当前节点和后一个节点的连接, 防止样式上的断线
+     * 这是天盘图与其余的模板不同的地方
+     */        connect.register("arc_tp", function(node, parent, connection, width, color) {
+            var end_box = node.getLayoutBox(), start_box = parent.getLayoutBox();
+            var index = node.getIndex();
+            var nextNode = parent.getChildren()[index + 1];
+            if (node.getIndex() > 0) {
+                start_box = parent.getChildren()[index - 1].getLayoutBox();
+            }
+            var start, end, vector;
+            var abs = Math.abs;
+            var pathData = [];
+            var side = end_box.x > start_box.x ? "right" : "left";
+            node.getMinder().getPaper().addResource(connectMarker);
+            start = new kity.Point(start_box.cx, start_box.cy);
+            end = new kity.Point(end_box.cx, end_box.cy);
+            var jl = Math.sqrt(Math.pow(start.x - end.x, 2) + Math.pow(start.y - end.y, 2));
+ //两圆中心点距离
+            jl = node.getIndex() == 0 ? jl * .4 : jl;
+            vector = kity.Vector.fromPoints(start, end);
+            pathData.push("M", start);
+            pathData.push("A", jl, jl, 0, 0, 1, end);
+            connection.setMarker(connectMarker);
+            connectMarker.dot.fill(color);
+            connection.setPathData(pathData);
+            // 设置下一个的节点的连接线
+            if (nextNode && nextNode.getConnection()) {
+                var nextConnection = nextNode.getConnection();
+                var next_end_box = nextNode.getLayoutBox();
+                var next_end = new kity.Point(next_end_box.cx, next_end_box.cy);
+                var jl2 = Math.sqrt(Math.pow(end.x - next_end.x, 2) + Math.pow(end.y - next_end.y, 2));
+ //两圆中心点距离
+                pathData = [];
+                pathData.push("M", end);
+                pathData.push("A", jl2, jl2, 0, 0, 1, next_end);
+                nextConnection.setMarker(connectMarker);
+                connectMarker.dot.fill(color);
+                nextConnection.setPathData(pathData);
+            }
+        });
+    }
+};
+
 //src/connect/arc.js
 /**
  * @fileOverview
@@ -45,8 +108,7 @@ var _p = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[0] = {
+ */_p[1] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var connect = _p.r(11);
@@ -77,71 +139,6 @@ _p[0] = {
     }
 };
 
-//src/connect/arc_tp.js
-/**
- *
- * 圆弧连线
- *
- * @author: along
- * @copyright: bpd729@163.com , 2015
- */
-_p[1] = {
-    value: function(require, exports, module) {
-        var kity = _p.r(17);
-        var connect = _p.r(11);
-        var connectMarker = new kity.Marker().pipe(function() {
-            var r = 7;
-            var dot = new kity.Circle(r - 1);
-            this.addShape(dot);
-            this.setRef(r - 1, 0).setViewBox(-r, -r, r + r, r + r).setWidth(r).setHeight(r);
-            this.dot = dot;
-            this.node.setAttribute("markerUnits", "userSpaceOnUse");
-        });
-        /**
-     * 天盘图连线除了连接当前节点和前一个节点外, 还需要渲染当前节点和后一个节点的连接, 防止样式上的断线
-     * 这是天盘图与其余的模板不同的地方
-     */
-        connect.register("arc_tp", function(node, parent, connection, width, color) {
-            var end_box = node.getLayoutBox(), start_box = parent.getLayoutBox();
-            var index = node.getIndex();
-            var nextNode = parent.getChildren()[index + 1];
-            if (node.getIndex() > 0) {
-                start_box = parent.getChildren()[index - 1].getLayoutBox();
-            }
-            var start, end, vector;
-            var abs = Math.abs;
-            var pathData = [];
-            var side = end_box.x > start_box.x ? "right" : "left";
-            node.getMinder().getPaper().addResource(connectMarker);
-            start = new kity.Point(start_box.cx, start_box.cy);
-            end = new kity.Point(end_box.cx, end_box.cy);
-            var jl = Math.sqrt(Math.pow(start.x - end.x, 2) + Math.pow(start.y - end.y, 2));
-            //两圆中心点距离
-            jl = node.getIndex() == 0 ? jl * .4 : jl;
-            vector = kity.Vector.fromPoints(start, end);
-            pathData.push("M", start);
-            pathData.push("A", jl, jl, 0, 0, 1, end);
-            connection.setMarker(connectMarker);
-            connectMarker.dot.fill(color);
-            connection.setPathData(pathData);
-            // 设置下一个的节点的连接线
-            if (nextNode && nextNode.getConnection()) {
-                var nextConnection = nextNode.getConnection();
-                var next_end_box = nextNode.getLayoutBox();
-                var next_end = new kity.Point(next_end_box.cx, next_end_box.cy);
-                var jl2 = Math.sqrt(Math.pow(end.x - next_end.x, 2) + Math.pow(end.y - next_end.y, 2));
-                //两圆中心点距离
-                pathData = [];
-                pathData.push("M", end);
-                pathData.push("A", jl2, jl2, 0, 0, 1, next_end);
-                nextConnection.setMarker(connectMarker);
-                connectMarker.dot.fill(color);
-                nextConnection.setPathData(pathData);
-            }
-        });
-    }
-};
-
 //src/connect/bezier.js
 /**
  * @fileOverview
@@ -150,8 +147,7 @@ _p[1] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[2] = {
+ */_p[2] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var connect = _p.r(11);
@@ -187,8 +183,7 @@ _p[2] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[3] = {
+ */_p[3] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var connect = _p.r(11);
@@ -214,8 +209,7 @@ _p[3] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[4] = {
+ */_p[4] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var connect = _p.r(11);
@@ -245,8 +239,7 @@ _p[4] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[5] = {
+ */_p[5] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var connect = _p.r(11);
@@ -302,8 +295,7 @@ _p[5] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[6] = {
+ */_p[6] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var connect = _p.r(11);
@@ -344,8 +336,7 @@ _p[6] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[7] = {
+ */_p[7] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var Minder = _p.r(19);
@@ -377,8 +368,7 @@ _p[7] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[8] = {
+ */_p[8] = {
     value: function(require, exports, module) {
         var Minder = _p.r(19);
         var animateDefaultOptions = {
@@ -425,8 +415,7 @@ _p[9] = {
         var COMMAND_STATE_ACTIVED = 1;
         /**
      * 表示一个命令，包含命令的查询及执行
-     */
-        var Command = kity.createClass("Command", {
+     */        var Command = kity.createClass("Command", {
             constructor: function() {
                 this._isContentChange = true;
                 this._isSelectionChange = false;
@@ -564,13 +553,11 @@ _p[10] = {
               case "1.1.3":
                 c_113_120(json);
 
-              /* falls through */
-                case "1.2.0":
+                /* falls through */              case "1.2.0":
               case "1.2.1":
                 c_120_130(json);
 
-              /* falls through */
-                case "1.3.0":
+                /* falls through */              case "1.3.0":
               case "1.3.1":
               case "1.3.2":
               case "1.3.3":
@@ -587,8 +574,7 @@ _p[10] = {
                 traverse(child, fn);
             });
         }
-        /* 脑图数据升级 */
-        function c_120_130(json) {
+        /* 脑图数据升级 */        function c_120_130(json) {
             traverse(json, function(node) {
                 var data = node.data;
                 delete data.layout_bottom_offset;
@@ -599,8 +585,7 @@ _p[10] = {
         /**
      * 脑图数据升级
      * v1.1.3 => v1.2.0
-     * */
-        function c_113_120(json) {
+     * */        function c_113_120(json) {
             // 原本的布局风格
             var ocs = json.data.currentstyle;
             delete json.data.currentstyle;
@@ -830,6 +815,7 @@ _p[12] = {
             Text2Children: function(node, text) {
                 if (!(node instanceof kityminder.Node)) {
                     return;
+                    // throw new Error('Json2Children::node is not a kityminder.Node type!');
                 }
                 var children = [], jsonMap = {}, level = 0;
                 var LINE_SPLITTER = /\r|\n|\r\n/, TAB_REGEXP = /^(\t|\x20{4})/;
@@ -935,8 +921,7 @@ _p[12] = {
              * @event preimport
              * @for Minder
              * @when 导入数据之前
-             */
-                this._fire(new MinderEvent("preimport", null, false));
+             */                this._fire(new MinderEvent("preimport", null, false));
                 // 删除当前所有节点
                 while (this._root.getChildren().length) {
                     this.removeNode(this._root.getChildren()[0]);
@@ -950,8 +935,7 @@ _p[12] = {
              * @event import,contentchange,interactchange
              * @for Minder
              * @when 导入数据之后
-             */
-                this.fire("import");
+             */                this.fire("import");
                 this._firePharse({
                     type: "contentchange"
                 });
@@ -1059,8 +1043,7 @@ _p[13] = {
         /**
      * @class MinderEvent
      * @description 表示一个脑图中发生的事件
-     */
-        var MinderEvent = kity.createClass("MindEvent", {
+     */        var MinderEvent = kity.createClass("MindEvent", {
             constructor: function(type, params, canstop) {
                 params = params || {};
                 if (params.getType && params.getType() == "ShapeEvent") {
@@ -1076,8 +1059,7 @@ _p[13] = {
                  * @for MinderEvent
                  * @description 如果事件是从原声 Dom 事件派生的（如 click、mousemove 等），会有 originEvent 指向原来的 Dom 事件
                  * @type {DomEvent}
-                 */
-                    this.originEvent = params.originEvent;
+                 */                    this.originEvent = params.originEvent;
                 } else if (params.target && params.preventDefault) {
                     this.originEvent = params;
                 } else {
@@ -1088,8 +1070,7 @@ _p[13] = {
              * @for MinderEvent
              * @description 事件的类型，如 `click`、`contentchange` 等
              * @type {string}
-             */
-                this.type = type;
+             */                this.type = type;
                 this._canstop = canstop || false;
             },
             /**
@@ -1240,8 +1221,7 @@ _p[13] = {
                 var lastStatus = this.getStatus();
                 for (var i = 0; i < callbacks.length; i++) {
                     callbacks[i].call(this, e);
-                    /* this.getStatus() != lastStatus ||*/
-                    if (e.shouldStopPropagationImmediately()) {
+                    /* this.getStatus() != lastStatus ||*/                    if (e.shouldStopPropagationImmediately()) {
                         break;
                     }
                 }
@@ -1504,8 +1484,7 @@ _p[16] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[17] = {
+ */_p[17] = {
     value: function(require, exports, module) {
         module.exports = window.kity;
     }
@@ -1528,8 +1507,7 @@ _p[18] = {
         }
         /**
      * @class Layout 布局基类，具体布局需要从该类派生
-     */
-        var Layout = kity.createClass("Layout", {
+     */        var Layout = kity.createClass("Layout", {
             /**
          * @abstract
          *
@@ -1664,8 +1642,7 @@ _p[18] = {
         });
         /**
      * 布局支持池子管理
-     */
-        utils.extend(Minder, {
+     */        utils.extend(Minder, {
             getLayoutList: function() {
                 return _layouts;
             },
@@ -1678,8 +1655,7 @@ _p[18] = {
         });
         /**
      * MinderNode 上的布局支持
-     */
-        kity.extendClass(MinderNode, {
+     */        kity.extendClass(MinderNode, {
             /**
          * 获得当前节点的布局名称
          *
@@ -1832,8 +1808,7 @@ _p[18] = {
         });
         /**
      * Minder 上的布局支持
-     */
-        kity.extendClass(Minder, {
+     */        kity.extendClass(Minder, {
             layout: function() {
                 var duration = this.getOption("layoutAnimationDuration");
                 this.getRoot().traverse(function(node) {
@@ -1921,7 +1896,9 @@ _p[18] = {
                                 consume();
                             }, 150);
                         });
-                    } else {
+                    }
+                    // 否则直接更新
+                     else {
                         applyMatrix(node, matrix);
                         me.fire("layoutfinish", {
                             node: node,
@@ -1949,8 +1926,7 @@ _p[18] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[19] = {
+ */_p[19] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var utils = _p.r(33);
@@ -1983,13 +1959,11 @@ _p[20] = {
         var kity = _p.r(17);
         var utils = _p.r(33);
         var Minder = _p.r(19);
-        /* 已注册的模块 */
-        var _modules = {};
+        /* 已注册的模块 */        var _modules = {};
         exports.register = function(name, module) {
             _modules[name] = module;
         };
-        /* 模块初始化 */
-        Minder.registerInitHook(function() {
+        /* 模块初始化 */        Minder.registerInitHook(function() {
             this._initModules();
         });
         // 模块声明周期维护
@@ -2111,8 +2085,7 @@ _p[21] = {
      * @class MinderNode
      *
      * 表示一个脑图节点
-     */
-        var MinderNode = kity.createClass("MinderNode", {
+     */        var MinderNode = kity.createClass("MinderNode", {
             /**
          * 创建一个游离的脑图节点
          *
@@ -2455,8 +2428,7 @@ _p[21] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[22] = {
+ */_p[22] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var utils = _p.r(33);
@@ -2491,8 +2463,7 @@ _p[22] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[23] = {
+ */_p[23] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var utils = _p.r(33);
@@ -2559,8 +2530,7 @@ _p[23] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[24] = {
+ */_p[24] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var Minder = _p.r(19);
@@ -2670,34 +2640,22 @@ _p[25] = {
     */
         /*  promise states [Promises/A+ 2.1]  */
         var STATE_PENDING = 0;
-        /*  [Promises/A+ 2.1.1]  */
-        var STATE_FULFILLED = 1;
-        /*  [Promises/A+ 2.1.2]  */
-        var STATE_REJECTED = 2;
-        /*  [Promises/A+ 2.1.3]  */
-        /*  promise object constructor  */
-        var Promise = function(executor) {
+ /*  [Promises/A+ 2.1.1]  */        var STATE_FULFILLED = 1;
+ /*  [Promises/A+ 2.1.2]  */        var STATE_REJECTED = 2;
+ /*  [Promises/A+ 2.1.3]  */
+        /*  promise object constructor  */        var Promise = function(executor) {
             /*  optionally support non-constructor/plain-function call  */
             if (!(this instanceof Promise)) return new Promise(executor);
-            /*  initialize object  */
-            this.id = "Thenable/1.0.7";
+            /*  initialize object  */            this.id = "Thenable/1.0.7";
             this.state = STATE_PENDING;
-            /*  initial state  */
-            this.fulfillValue = undefined;
-            /*  initial value  */
-            /*  [Promises/A+ 1.3, 2.1.2.2]  */
-            this.rejectReason = undefined;
-            /*  initial reason */
-            /*  [Promises/A+ 1.5, 2.1.3.2]  */
-            this.onFulfilled = [];
-            /*  initial handlers  */
-            this.onRejected = [];
-            /*  initial handlers  */
-            /*  support optional executor function  */
-            if (typeof executor === "function") executor.call(this, this.fulfill.bind(this), this.reject.bind(this));
+ /*  initial state  */            this.fulfillValue = undefined;
+ /*  initial value  */ /*  [Promises/A+ 1.3, 2.1.2.2]  */            this.rejectReason = undefined;
+ /*  initial reason */ /*  [Promises/A+ 1.5, 2.1.3.2]  */            this.onFulfilled = [];
+ /*  initial handlers  */            this.onRejected = [];
+ /*  initial handlers  */
+            /*  support optional executor function  */            if (typeof executor === "function") executor.call(this, this.fulfill.bind(this), this.reject.bind(this));
         };
-        /*  Promise API methods  */
-        Promise.prototype = {
+        /*  Promise API methods  */        Promise.prototype = {
             /*  promise resolving methods  */
             fulfill: function(value) {
                 return deliver(this, STATE_FULFILLED, "fulfillValue", value);
@@ -2709,14 +2667,11 @@ _p[25] = {
             then: function(onFulfilled, onRejected) {
                 var curr = this;
                 var next = new Promise();
-                /*  [Promises/A+ 2.2.7]  */
-                curr.onFulfilled.push(resolver(onFulfilled, next, "fulfill"));
-                /*  [Promises/A+ 2.2.2/2.2.6]  */
-                curr.onRejected.push(resolver(onRejected, next, "reject"));
-                /*  [Promises/A+ 2.2.3/2.2.6]  */
-                execute(curr);
+ /*  [Promises/A+ 2.2.7]  */                curr.onFulfilled.push(resolver(onFulfilled, next, "fulfill"));
+ /*  [Promises/A+ 2.2.2/2.2.6]  */                curr.onRejected.push(resolver(onRejected, next, "reject"));
+ /*  [Promises/A+ 2.2.3/2.2.6]  */                execute(curr);
                 return next;
-            }
+ /*  [Promises/A+ 2.2.7, 3.3]  */            }
         };
         Promise.all = function(arr) {
             return new Promise(function(resolve, reject) {
@@ -2737,44 +2692,34 @@ _p[25] = {
                 }
             });
         };
-        /*  deliver an action  */
-        var deliver = function(curr, state, name, value) {
+        /*  deliver an action  */        var deliver = function(curr, state, name, value) {
             if (curr.state === STATE_PENDING) {
                 curr.state = state;
-                /*  [Promises/A+ 2.1.2.1, 2.1.3.1]  */
-                curr[name] = value;
-                /*  [Promises/A+ 2.1.2.2, 2.1.3.2]  */
-                execute(curr);
+ /*  [Promises/A+ 2.1.2.1, 2.1.3.1]  */                curr[name] = value;
+ /*  [Promises/A+ 2.1.2.2, 2.1.3.2]  */                execute(curr);
             }
             return curr;
         };
-        /*  execute all handlers  */
-        var execute = function(curr) {
+        /*  execute all handlers  */        var execute = function(curr) {
             if (curr.state === STATE_FULFILLED) execute_handlers(curr, "onFulfilled", curr.fulfillValue); else if (curr.state === STATE_REJECTED) execute_handlers(curr, "onRejected", curr.rejectReason);
         };
-        /*  execute particular set of handlers  */
-        var execute_handlers = function(curr, name, value) {
+        /*  execute particular set of handlers  */        var execute_handlers = function(curr, name, value) {
             /* global process: true */
             /* global setImmediate: true */
             /* global setTimeout: true */
             /*  short-circuit processing  */
             if (curr[name].length === 0) return;
-            /*  iterate over all handlers, exactly once  */
-            var handlers = curr[name];
+            /*  iterate over all handlers, exactly once  */            var handlers = curr[name];
             curr[name] = [];
-            /*  [Promises/A+ 2.2.2.3, 2.2.3.3]  */
-            var func = function() {
+ /*  [Promises/A+ 2.2.2.3, 2.2.3.3]  */            var func = function() {
                 for (var i = 0; i < handlers.length; i++) handlers[i](value);
-            };
-            /*  execute procedure asynchronously  */
-            /*  [Promises/A+ 2.2.4, 3.1]  */
-            if (typeof process === "object" && typeof process.nextTick === "function") process.nextTick(func); else if (typeof setImmediate === "function") setImmediate(func); else setTimeout(func, 0);
+ /*  [Promises/A+ 2.2.5]  */            };
+            /*  execute procedure asynchronously  */ /*  [Promises/A+ 2.2.4, 3.1]  */            if (typeof process === "object" && typeof process.nextTick === "function") process.nextTick(func); else if (typeof setImmediate === "function") setImmediate(func); else setTimeout(func, 0);
         };
-        /*  generate a resolver function */
-        var resolver = function(cb, next, method) {
+        /*  generate a resolver function */        var resolver = function(cb, next, method) {
             return function(value) {
                 if (typeof cb !== "function") /*  [Promises/A+ 2.2.1, 2.2.7.3, 2.2.7.4]  */
-                next[method].call(next, value); else {
+                next[method].call(next, value); /*  [Promises/A+ 2.2.7.3, 2.2.7.4]  */ else {
                     var result;
                     try {
                         if (value instanceof Promise) {
@@ -2783,67 +2728,56 @@ _p[25] = {
                     } /*  [Promises/A+ 2.2.2.1, 2.2.3.1, 2.2.5, 3.2]  */
                     catch (e) {
                         next.reject(e);
-                        /*  [Promises/A+ 2.2.7.2]  */
-                        return;
+ /*  [Promises/A+ 2.2.7.2]  */                        return;
                     }
                     resolve(next, result);
-                }
+ /*  [Promises/A+ 2.2.7.1]  */                }
             };
         };
-        /*  'Promise Resolution Procedure'  */
-        /*  [Promises/A+ 2.3]  */
-        var resolve = function(promise, x) {
-            /*  sanity check arguments  */
-            /*  [Promises/A+ 2.3.1]  */
+        /*  'Promise Resolution Procedure'  */ /*  [Promises/A+ 2.3]  */        var resolve = function(promise, x) {
+            /*  sanity check arguments  */ /*  [Promises/A+ 2.3.1]  */
             if (promise === x) {
                 promise.reject(new TypeError("cannot resolve promise with itself"));
                 return;
             }
             /*  surgically check for a 'then' method
-            (mainly to just call the 'getter' of 'then' only once)  */
-            var then;
+            (mainly to just call the 'getter' of 'then' only once)  */            var then;
             if (typeof x === "object" && x !== null || typeof x === "function") {
                 try {
                     then = x.then;
                 } /*  [Promises/A+ 2.3.3.1, 3.5]  */
                 catch (e) {
                     promise.reject(e);
-                    /*  [Promises/A+ 2.3.3.2]  */
-                    return;
+ /*  [Promises/A+ 2.3.3.2]  */                    return;
                 }
             }
             /*  handle own Thenables    [Promises/A+ 2.3.2]
-            and similar 'thenables' [Promises/A+ 2.3.3]  */
-            if (typeof then === "function") {
+            and similar 'thenables' [Promises/A+ 2.3.3]  */            if (typeof then === "function") {
                 var resolved = false;
                 try {
-                    /*  call retrieved 'then' method */
-                    /*  [Promises/A+ 2.3.3.3]  */
-                    then.call(x, /*  resolvePromise  */
-                    /*  [Promises/A+ 2.3.3.3.1]  */
+                    /*  call retrieved 'then' method */ /*  [Promises/A+ 2.3.3.3]  */
+                    then.call(x, 
+                    /*  resolvePromise  */ /*  [Promises/A+ 2.3.3.3.1]  */
                     function(y) {
                         if (resolved) return;
                         resolved = true;
-                        /*  [Promises/A+ 2.3.3.3.3]  */
-                        if (y === x) /*  [Promises/A+ 3.6]  */
+ /*  [Promises/A+ 2.3.3.3.3]  */                        if (y === x) /*  [Promises/A+ 3.6]  */
                         promise.reject(new TypeError("circular thenable chain")); else resolve(promise, y);
-                    }, /*  rejectPromise  */
-                    /*  [Promises/A+ 2.3.3.3.2]  */
+                    }, 
+                    /*  rejectPromise  */ /*  [Promises/A+ 2.3.3.3.2]  */
                     function(r) {
                         if (resolved) return;
                         resolved = true;
-                        /*  [Promises/A+ 2.3.3.3.3]  */
-                        promise.reject(r);
+ /*  [Promises/A+ 2.3.3.3.3]  */                        promise.reject(r);
                     });
                 } catch (e) {
                     if (!resolved) /*  [Promises/A+ 2.3.3.3.3]  */
                     promise.reject(e);
-                }
+ /*  [Promises/A+ 2.3.3.3.4]  */                }
                 return;
             }
-            /*  handle other values  */
-            promise.fulfill(x);
-        };
+            /*  handle other values  */            promise.fulfill(x);
+ /*  [Promises/A+ 2.3.4, 2.3.3.4]  */        };
         Promise.resolve = function(value) {
             return new Promise(function(resolve) {
                 resolve(value);
@@ -2854,8 +2788,7 @@ _p[25] = {
                 reject(reason);
             });
         };
-        /*  export API  */
-        module.exports = Promise;
+        /*  export API  */        module.exports = Promise;
     }
 };
 
@@ -2867,8 +2800,7 @@ _p[25] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[26] = {
+ */_p[26] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var Minder = _p.r(19);
@@ -3037,7 +2969,9 @@ _p[27] = {
                                 renderer.getRenderShape().setVisible(true);
                                 // 更新渲染图形
                                 lastBoxes[j] = renderer.update(renderer.getRenderShape(), node, node._contentBox);
-                            } else if (renderer.getRenderShape()) {
+                            }
+                            // 如果不应该渲染，但是渲染图形创建过了，需要隐藏起来
+                             else if (renderer.getRenderShape()) {
                                 renderer.getRenderShape().setVisible(false);
                                 lastBoxes[j] = null;
                             }
@@ -3081,7 +3015,9 @@ _p[27] = {
                                 node._contentBox = node._contentBox.merge(latestBox);
                                 renderer.contentBox = latestBox;
                             }
-                        } else if (renderer.getRenderShape()) {
+                        }
+                        // 如果不应该渲染，但是渲染图形创建过了，需要隐藏起来
+                         else if (renderer.getRenderShape()) {
                             renderer.getRenderShape().setVisible(false);
                         }
                     });
@@ -3268,8 +3204,7 @@ _p[28] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[29] = {
+ */_p[29] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var utils = _p.r(33);
@@ -3280,8 +3215,7 @@ _p[29] = {
      * 计算包含 meta 键的 keycode
      *
      * @param  {String|KeyEvent} unknown
-     */
-        function getMetaKeyCode(unknown) {
+     */        function getMetaKeyCode(unknown) {
             var CTRL_MASK = 4096;
             var ALT_MASK = 8192;
             var SHIFT_MASK = 16384;
@@ -3411,8 +3345,7 @@ _p[29] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[30] = {
+ */_p[30] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var Minder = _p.r(19);
@@ -3577,8 +3510,7 @@ _p[32] = {
      *         'root-stroke': 'none',
      *         'root-padding': [10, 20]
      *     });
-     */
-        function register(name, theme) {
+     */        function register(name, theme) {
             _themes[name] = theme;
         }
         exports.register = register;
@@ -3768,8 +3700,7 @@ _p[34] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[35] = {
+ */_p[35] = {
     value: function(require, exports, module) {
         var kityminder = {
             version: _p.r(19).version
@@ -3843,8 +3774,8 @@ _p[35] = {
         _p.r(78);
         _p.r(80);
         _p.r(79);
-        _p.r(0);
         _p.r(1);
+        _p.r(0);
         _p.r(2);
         _p.r(3);
         _p.r(4);
@@ -4066,8 +3997,7 @@ _p[37] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[38] = {
+ */_p[38] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var Layout = _p.r(18);
@@ -4120,8 +4050,7 @@ _p[38] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[39] = {
+ */_p[39] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var Layout = _p.r(18);
@@ -4237,8 +4166,7 @@ _p[40] = {
  *
  * @author: along
  * @copyright: bpd729@163.com, 2015
- */
-_p[41] = {
+ */_p[41] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var Layout = _p.r(18);
@@ -4335,8 +4263,7 @@ _p[42] = {
      * @state
      *    0: 当前选中了具有相同父亲的节点
      *   -1: 其它情况
-     */
-        var ArrangeUpCommand = kity.createClass("ArrangeUpCommand", {
+     */        var ArrangeUpCommand = kity.createClass("ArrangeUpCommand", {
             base: Command,
             execute: function(km) {
                 var nodes = km.getSelectedNodes();
@@ -4361,8 +4288,7 @@ _p[42] = {
      * @state
      *    0: 当前选中了具有相同父亲的节点
      *   -1: 其它情况
-     */
-        var ArrangeDownCommand = kity.createClass("ArrangeUpCommand", {
+     */        var ArrangeDownCommand = kity.createClass("ArrangeUpCommand", {
             base: Command,
             execute: function(km) {
                 var nodes = km.getSelectedNodes();
@@ -4387,8 +4313,7 @@ _p[42] = {
      * @state
      *    0: 当前选中了具有相同父亲的节点
      *   -1: 其它情况
-     */
-        var ArrangeCommand = kity.createClass("ArrangeCommand", {
+     */        var ArrangeCommand = kity.createClass("ArrangeCommand", {
             base: Command,
             execute: function(km, index) {
                 var nodes = km.getSelectedNodes().slice();
@@ -4576,8 +4501,7 @@ _p[44] = {
             * 原因：粘贴递归 append 时没有清空原来父节点的子节点，而父节点被复制的时候，是连同子节点一起复制过来的
             * 解决办法：增加了下面这一行代码
             * by: @zhangbobell zhangbobell@163.com
-            */
-                child.clearChildren();
+            */                child.clearChildren();
                 for (var i = 0, ci; ci = children[i]; i++) {
                     appendChildNode(child, ci);
                 }
@@ -4598,8 +4522,7 @@ _p[44] = {
          * @state
          *   0: 当前有选中的节点
          *  -1: 当前没有选中的节点
-         */
-            var CopyCommand = kity.createClass("CopyCommand", {
+         */            var CopyCommand = kity.createClass("CopyCommand", {
                 base: Command,
                 execute: function(km) {
                     sendToClipboard(km.getSelectedAncestors(true));
@@ -4613,8 +4536,7 @@ _p[44] = {
          * @state
          *   0: 当前有选中的节点
          *  -1: 当前没有选中的节点
-         */
-            var CutCommand = kity.createClass("CutCommand", {
+         */            var CutCommand = kity.createClass("CutCommand", {
                 base: Command,
                 execute: function(km) {
                     var ancestors = km.getSelectedAncestors();
@@ -4634,8 +4556,7 @@ _p[44] = {
          * @state
          *   0: 当前有选中的节点
          *  -1: 当前没有选中的节点
-         */
-            var PasteCommand = kity.createClass("PasteCommand", {
+         */            var PasteCommand = kity.createClass("PasteCommand", {
                 base: Command,
                 execute: function(km) {
                     if (_clipboardNodes.length) {
@@ -4659,8 +4580,7 @@ _p[44] = {
          * @Desc: 若支持原生clipboadr事件则基于原生扩展，否则使用km的基础事件只处理节点的粘贴复制
          * @Editor: Naixor
          * @Date: 2015.9.20
-         */
-            if (km.supportClipboardEvent && !kity.Browser.gecko) {
+         */            if (km.supportClipboardEvent && !kity.Browser.gecko) {
                 var Copy = function(e) {
                     this.fire("beforeCopy", e);
                 };
@@ -4975,8 +4895,7 @@ _p[45] = {
                 * 增加了下面一行判断，修复了循环比较中 targetBox 为折叠节点时，intersetBox 面积为 0，
                 * 而 targetBox 的 width 和 height 均为 0
                 * 此时造成了满足以下的第二个条件而返回 true
-                * */
-                    if (!area(intersectBox)) return false;
+                * */                    if (!area(intersectBox)) return false;
                     // 面积判断，交叉面积大于其中的一半
                     if (area(intersectBox) > .5 * Math.min(area(sourceBox), area(targetBox))) return true;
                     // 有一个边完全重合的情况，也认为两个是交叉的
@@ -5096,8 +5015,7 @@ _p[46] = {
          * @state
          *   0: 当前有选中的节点
          *  -1: 当前没有选中的节点
-         */
-            var ExpandCommand = kity.createClass("ExpandCommand", {
+         */            var ExpandCommand = kity.createClass("ExpandCommand", {
                 base: Command,
                 execute: function(km, justParents) {
                     var node = km.getSelectedNode();
@@ -5123,8 +5041,7 @@ _p[46] = {
          * @param {number} level 指定展开到的层级，最少值为 1。
          * @state
          *   0: 一直可用
-         */
-            var ExpandToLevelCommand = kity.createClass("ExpandToLevelCommand", {
+         */            var ExpandToLevelCommand = kity.createClass("ExpandToLevelCommand", {
                 base: Command,
                 execute: function(km, level) {
                     km.getRoot().traverse(function(node) {
@@ -5141,8 +5058,7 @@ _p[46] = {
          * @state
          *   0: 当前有选中的节点
          *  -1: 当前没有选中的节点
-         */
-            var CollapseCommand = kity.createClass("CollapseCommand", {
+         */            var CollapseCommand = kity.createClass("CollapseCommand", {
                 base: Command,
                 execute: function(km) {
                     var node = km.getSelectedNode();
@@ -5718,8 +5634,7 @@ _p[50] = {
          *   0: 当前有选中的节点
          *  -1: 当前没有选中的节点
          * @return 返回首个选中节点的图片信息，JSON 对象： `{url: url, title: title}`
-         */
-            var ImageCommand = kity.createClass("ImageCommand", {
+         */            var ImageCommand = kity.createClass("ImageCommand", {
                 base: Command,
                 execute: function(km, url, title) {
                     var nodes = km.getSelectedNodes();
@@ -5950,8 +5865,7 @@ _p[51] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[52] = {
+ */_p[52] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var Command = _p.r(9);
@@ -5965,8 +5879,7 @@ _p[52] = {
      *   0: 当前有选中的节点
      *  -1: 当前没有选中的节点
      * @return 返回首个选中节点的布局名称
-     */
-        var LayoutCommand = kity.createClass("LayoutCommand", {
+     */        var LayoutCommand = kity.createClass("LayoutCommand", {
             base: Command,
             execute: function(minder, name) {
                 var nodes = minder.getSelectedNodes();
@@ -5990,8 +5903,7 @@ _p[52] = {
      * @state
      *   0: 始终可用
      * @return 返回首个选中节点的布局名称
-     */
-        var ResetLayoutCommand = kity.createClass("ResetLayoutCommand", {
+     */        var ResetLayoutCommand = kity.createClass("ResetLayoutCommand", {
             base: Command,
             execute: function(minder) {
                 var nodes = minder.getSelectedNodes();
@@ -6042,8 +5954,7 @@ _p[53] = {
      * @state
      *    0: 当前有选中的节点
      *   -1: 当前没有选中的节点
-     */
-        var AppendChildCommand = kity.createClass("AppendChildCommand", {
+     */        var AppendChildCommand = kity.createClass("AppendChildCommand", {
             base: Command,
             execute: function(km, text) {
                 var parent = km.getSelectedNode();
@@ -6072,8 +5983,7 @@ _p[53] = {
      * @state
      *    0: 当前有选中的节点
      *   -1: 当前没有选中的节点
-     */
-        var AppendSiblingCommand = kity.createClass("AppendSiblingCommand", {
+     */        var AppendSiblingCommand = kity.createClass("AppendSiblingCommand", {
             base: Command,
             execute: function(km, text) {
                 var sibling = km.getSelectedNode();
@@ -6098,8 +6008,7 @@ _p[53] = {
      * @state
      *    0: 当前有选中的节点
      *   -1: 当前没有选中的节点
-     */
-        var RemoveNodeCommand = kity.createClass("RemoverNodeCommand", {
+     */        var RemoveNodeCommand = kity.createClass("RemoverNodeCommand", {
             base: Command,
             execute: function(km) {
                 var nodes = km.getSelectedNodes();
@@ -6175,8 +6084,7 @@ _p[53] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[54] = {
+ */_p[54] = {
     value: function(require, exports, module) {
         var kity = _p.r(17);
         var utils = _p.r(33);
@@ -6194,8 +6102,7 @@ _p[54] = {
          * @state
          *    0: 当前有选中的节点
          *   -1: 当前没有选中的节点
-         */
-            var NoteCommand = kity.createClass("NoteCommand", {
+         */            var NoteCommand = kity.createClass("NoteCommand", {
                 base: Command,
                 execute: function(minder, note) {
                     var node = minder.getSelectedNode();
@@ -6411,7 +6318,7 @@ _p[56] = {
             [ "#A464FF", "#4720C4" ], // 5 - purple
             [ "#A3A3A3", "#515151" ], // 6,7,8,9 - gray
             [ "#A3A3A3", "#515151" ], [ "#A3A3A3", "#515151" ], [ "#A3A3A3", "#515151" ] ];
-            // hue from 1 to 5
+ // hue from 1 to 5
             // jscs:disable maximumLineLength
             var BACK_PATH = "M0,13c0,3.866,3.134,7,7,7h6c3.866,0,7-3.134,7-7V7H0V13z";
             var MASK_PATH = "M20,10c0,3.866-3.134,7-7,7H7c-3.866,0-7-3.134-7-7V7c0-3.866,3.134-7,7-7h6c3.866,0,7,3.134,7,7V10z";
@@ -6430,7 +6337,7 @@ _p[56] = {
                 },
                 create: function() {
                     var white, back, mask, number;
-                    // 4 layer
+ // 4 layer
                     white = new kity.Path().setPathData(MASK_PATH).fill("white");
                     back = new kity.Path().setPathData(BACK_PATH).setTranslate(.5, .5);
                     mask = new kity.Path().setPathData(MASK_PATH).setOpacity(.8).setTranslate(.5, .5);
@@ -6459,8 +6366,7 @@ _p[56] = {
          * @state
          *    0: 当前有选中的节点
          *   -1: 当前没有选中的节点
-         */
-            var PriorityCommand = kity.createClass("SetPriorityCommand", {
+         */            var PriorityCommand = kity.createClass("SetPriorityCommand", {
                 base: Command,
                 execute: function(km, value) {
                     var nodes = km.getSelectedNodes();
@@ -6588,8 +6494,7 @@ _p[57] = {
          * @state
          *    0: 当前有选中的节点
          *   -1: 当前没有选中的节点
-         */
-            var ProgressCommand = kity.createClass("ProgressCommand", {
+         */            var ProgressCommand = kity.createClass("ProgressCommand", {
                 base: Command,
                 execute: function(km, value) {
                     var nodes = km.getSelectedNodes();
@@ -6738,14 +6643,12 @@ _p[58] = {
             }();
             /**
          * 自动使用的颜色序列
-         */
-            var RESOURCE_COLOR_SERIES = [ 51, 303, 75, 200, 157, 0, 26, 254 ].map(function(h) {
+         */            var RESOURCE_COLOR_SERIES = [ 51, 303, 75, 200, 157, 0, 26, 254 ].map(function(h) {
                 return kity.Color.createHSL(h, 100, 85);
             });
             /**
          * 在 Minder 上拓展一些关于资源的支持接口
-         */
-            kity.extendClass(Minder, {
+         */            kity.extendClass(Minder, {
                 /**
              * 获取字符串的哈希值
              *
@@ -6842,8 +6745,7 @@ _p[58] = {
          *
          * // 清除选中节点的资源
          * minder.execCommand('resource', null);
-         */
-            var ResourceCommand = kity.createClass("ResourceCommand", {
+         */            var ResourceCommand = kity.createClass("ResourceCommand", {
                 base: Command,
                 execute: function(minder, resource) {
                     var nodes = minder.getSelectedNodes();
@@ -6877,8 +6779,7 @@ _p[58] = {
          * @class 资源的覆盖图形
          *
          * 该类为一个资源以指定的颜色渲染一个动态的覆盖图形
-         */
-            var ResourceOverlay = kity.createClass("ResourceOverlay", {
+         */            var ResourceOverlay = kity.createClass("ResourceOverlay", {
                 base: kity.Group,
                 constructor: function() {
                     this.callBase();
@@ -6910,8 +6811,7 @@ _p[58] = {
             });
             /**
          * @class 资源渲染器
-         */
-            var ResourceRenderer = kity.createClass("ResourceRenderer", {
+         */            var ResourceRenderer = kity.createClass("ResourceRenderer", {
                 base: Renderer,
                 create: function(node) {
                     this.overlays = [];
@@ -6926,8 +6826,7 @@ _p[58] = {
                     /*  修复 resource 数组中出现 null 的 bug
                  *  @Author zhangbobell
                  *  @date 2016-01-15
-                 */
-                    var resource = node.getData("resource").filter(function(ele) {
+                 */                    var resource = node.getData("resource").filter(function(ele) {
                         return ele !== null;
                     });
                     if (resource.length === 0) {
@@ -7077,11 +6976,21 @@ _p[59] = {
                             this.removeAllSelectedNodes();
                             marqueeActivator.selectStart(e);
                             this.setStatus("normal");
-                        } else if (e.isShortcutKey("Ctrl")) {
+                        }
+                        // 点中了节点，并且按了 shift 键：
+                        //     被点中的节点切换选中状态
+                         else if (e.isShortcutKey("Ctrl")) {
                             this.toggleSelect(downNode);
-                        } else if (!downNode.isSelected()) {
+                        }
+                        // 点中的节点没有被选择：
+                        //     单选点中的节点
+                         else if (!downNode.isSelected()) {
                             this.select(downNode, true);
-                        } else if (!this.isSingleSelect()) {
+                        }
+                        // 点中的节点被选中了，并且不是单选：
+                        //     完成整个点击之后需要使其变为单选。
+                        //     不能马上变为单选，因为可能是需要拖动选中的多个节点
+                         else if (!this.isSingleSelect()) {
                             lastDownNode = downNode;
                             lastDownPosition = e.getPosition();
                         }
@@ -7234,8 +7143,7 @@ _p[61] = {
         /**
      * 针对不同系统、不同浏览器、不同字体做居中兼容性处理
      * 暂时未增加Linux的处理
-     */
-        var FONT_ADJUST = {
+     */        var FONT_ADJUST = {
             safari: {
                 "微软雅黑,Microsoft YaHei": -.17,
                 "楷体,楷体_GB2312,SimKai": -.1,
@@ -7562,6 +7470,7 @@ _p[62] = {
                 this._minder.on("normal.mousedown normal.touchstart " + "inputready.mousedown inputready.touchstart " + "readonly.mousedown readonly.touchstart", function(e) {
                     if (e.originEvent.button == 2) {
                         e.originEvent.preventDefault();
+ // 阻止中键拉动
                     }
                     // 点击未选中的根节点临时开启
                     if (e.getTargetNode() == this.getRoot() || e.originEvent.button == 2 || e.originEvent.altKey) {
@@ -7571,6 +7480,7 @@ _p[62] = {
                 }).on("normal.mousemove normal.touchmove " + "readonly.mousemove readonly.touchmove " + "inputready.mousemove inputready.touchmove", function(e) {
                     if (e.type == "touchmove") {
                         e.preventDefault();
+ // 阻止浏览器的后退事件
                     }
                     if (!isTempDrag) return;
                     var offset = kity.Vector.fromPoints(lastPosition, e.getPosition("view"));
@@ -7613,8 +7523,7 @@ _p[62] = {
          * @state
          *   0: 当前不是抓手状态
          *   1: 当前是抓手状态
-         */
-            var ToggleHandCommand = kity.createClass("ToggleHandCommand", {
+         */            var ToggleHandCommand = kity.createClass("ToggleHandCommand", {
                 base: Command,
                 execute: function(minder) {
                     if (minder.getStatus() != "hand") {
@@ -7636,8 +7545,7 @@ _p[62] = {
          * @param {number} duration 设置视野移动的动画时长（单位 ms），设置为 0 不使用动画
          * @state
          *   0: 始终可用
-         */
-            var CameraCommand = kity.createClass("CameraCommand", {
+         */            var CameraCommand = kity.createClass("CameraCommand", {
                 base: Command,
                 execute: function(km, focusNode) {
                     focusNode = focusNode || km.getRoot();
@@ -7662,8 +7570,7 @@ _p[62] = {
          * @param {number} duration 视野移动的动画时长（单位 ms），设置为 0 不使用动画
          * @state
          *   0: 始终可用
-         */
-            var MoveCommand = kity.createClass("MoveCommand", {
+         */            var MoveCommand = kity.createClass("MoveCommand", {
                 base: Command,
                 execute: function(km, dir) {
                     var dragger = km._viewDragger;
@@ -7754,8 +7661,7 @@ _p[62] = {
                     * Added by zhangbobell 2015.9.9
                     * windows 10 的 edge 浏览器在全部动画停止后，优先级图标不显示 text，
                     * 因此再次触发一次 render 事件，让浏览器重绘
-                    * */
-                        if (kity.Browser.edge) {
+                    * */                        if (kity.Browser.edge) {
                             this.fire("paperrender");
                         }
                         if (!selected) return;
@@ -7767,8 +7673,7 @@ _p[62] = {
                     * 以防止 view 动画变动了位置，导致本函数执行的时候位置计算不对
                     *
                     * fixed bug : 初始化的时候中心节点位置不固定（有的时候在左上角，有的时候在中心）
-                    * */
-                        if (timeline) {
+                    * */                        if (timeline) {
                             timeline.on("finish", function() {
                                 minder.fire("selectionchange");
                             });
@@ -7873,8 +7778,7 @@ _p[63] = {
          * @param {number} value 设置的比例，取值 100 则为原尺寸
          * @state
          *   0: 始终可用
-         */
-            var ZoomCommand = kity.createClass("Zoom", {
+         */            var ZoomCommand = kity.createClass("Zoom", {
                 base: Command,
                 execute: zoomMinder,
                 queryValue: function(minder) {
@@ -7888,8 +7792,7 @@ _p[63] = {
          * @state
          *   0: 如果当前脑图的配置中还有下一个比例等级
          *  -1: 其它情况
-         */
-            var ZoomInCommand = kity.createClass("ZoomInCommand", {
+         */            var ZoomInCommand = kity.createClass("ZoomInCommand", {
                 base: Command,
                 execute: function(minder) {
                     zoomMinder(minder, this.nextValue(minder));
@@ -7913,8 +7816,7 @@ _p[63] = {
          * @state
          *   0: 如果当前脑图的配置中还有上一个比例等级
          *  -1: 其它情况
-         */
-            var ZoomOutCommand = kity.createClass("ZoomOutCommand", {
+         */            var ZoomOutCommand = kity.createClass("ZoomOutCommand", {
                 base: Command,
                 execute: function(minder) {
                     zoomMinder(minder, this.nextValue(minder));
@@ -8156,8 +8058,7 @@ _p[66] = {
      * xhrLoadImage: 通过 xhr 加载保存在 BOS 上的图片
      * @note: BOS 上的 CORS 策略是取 headers 里面的 Origin 字段进行判断
      *        而通过 image 的 src 的方式是无法传递 origin 的，因此需要通过 xhr 进行
-     */
-        function xhrLoadImage(info, callback) {
+     */        function xhrLoadImage(info, callback) {
             return Promise(function(resolve, reject) {
                 if (info.url.indexOf("data:") === 0) {
                     var image = document.createElement("img");
@@ -8269,23 +8170,19 @@ _p[66] = {
         }
         function encode(json, minder, option) {
             var resultCallback;
-            /* 绘制 PNG 的画布及上下文 */
-            var canvas = document.createElement("canvas");
+            /* 绘制 PNG 的画布及上下文 */            var canvas = document.createElement("canvas");
             var ctx = canvas.getContext("2d");
-            /* 尝试获取背景图片 URL 或背景颜色 */
-            var bgDeclare = minder.getStyle("background").toString();
+            /* 尝试获取背景图片 URL 或背景颜色 */            var bgDeclare = minder.getStyle("background").toString();
             var bgUrl = /url\(\"(.+)\"\)/.exec(bgDeclare);
             var bgColor = kity.Color.parse(bgDeclare);
-            /* 获取 SVG 文件内容 */
-            var svgInfo = getSVGInfo(minder);
+            /* 获取 SVG 文件内容 */            var svgInfo = getSVGInfo(minder);
             var width = option && option.width && option.width > svgInfo.width ? option.width : svgInfo.width;
             var height = option && option.height && option.height > svgInfo.height ? option.height : svgInfo.height;
             var offsetX = option && option.width && option.width > svgInfo.width ? (option.width - svgInfo.width) / 2 : 0;
             var offsetY = option && option.height && option.height > svgInfo.height ? (option.height - svgInfo.height) / 2 : 0;
             var svgDataUrl = svgInfo.dataUrl;
             var imagesInfo = svgInfo.imagesInfo;
-            /* 画布的填充大小 */
-            var padding = 20;
+            /* 画布的填充大小 */            var padding = 20;
             canvas.width = width + padding * 2;
             canvas.height = height + padding * 2;
             function fillBackground(ctx, style) {
@@ -8371,8 +8268,7 @@ _p[67] = {
      * @method removeTransform
      * @param  {[type]}        svgDom [description]
      * @return {[type]}               [description]
-     */
-        function cleanSVG(svgDom, x, y) {
+     */        function cleanSVG(svgDom, x, y) {
             function getTransformToElement(target, source) {
                 var matrix;
                 try {
@@ -8616,7 +8512,7 @@ _p[67] = {
                 svgDom.setAttribute("width", width + padding * 2 | 0);
                 svgDom.setAttribute("height", height + padding * 2 | 0);
                 svgDom.setAttribute("style", "background: " + minder.getStyle("background"));
-                //"font-family: Arial, Microsoft Yahei, Heiti SC; " +
+ //"font-family: Arial, Microsoft Yahei, Heiti SC; " +
                 svgDom.setAttribute("viewBox", [ 0, 0, width + padding * 2 | 0, height + padding * 2 | 0 ].join(" "));
                 tempSvgContainer = document.createElement("div");
                 cleanSVG(svgDom, renderBox.x - padding | 0, renderBox.y - padding | 0);
@@ -8642,8 +8538,7 @@ _p[68] = {
      * @Desc: 增加对不容浏览器下节点中文本\t匹配的处理，不同浏览器下\t无法正确匹配，导致无法使用TAB来批量导入节点
      * @Editor: Naixor
      * @Date: 2015.9.17
-     */
-        var LINE_ENDING = "\r", LINE_ENDING_SPLITER = /\r\n|\r|\n/, TAB_CHAR = function(Browser) {
+     */        var LINE_ENDING = "\r", LINE_ENDING_SPLITER = /\r\n|\r|\n/, TAB_CHAR = function(Browser) {
             if (Browser.gecko) {
                 return {
                     REGEXP: new RegExp("^(\t|" + String.fromCharCode(160, 160, 32, 160) + ")"),
@@ -8672,8 +8567,7 @@ _p[68] = {
      * @method encodeWrap
      * @param  {String}   nodeText MinderNode.data.text
      * @return {String}            \n -> '\n'; \\n -> '\\n'
-     */
-        function encodeWrap(nodeText) {
+     */        function encodeWrap(nodeText) {
             if (!nodeText) {
                 return "";
             }
@@ -8713,8 +8607,7 @@ _p[68] = {
      * @method decodeWrap
      * @param  {[type]}   text [description]
      * @return {[type]}        [description]
-     */
-        function decodeWrap(text) {
+     */        function decodeWrap(text) {
             if (!text) {
                 return "";
             }
@@ -8820,8 +8713,7 @@ _p[68] = {
      * @Desc: 增加一个将当前选中节点转换成text的方法
      * @Editor: Naixor
      * @Date: 2015.9.21
-     */
-        function Node2Text(node) {
+     */        function Node2Text(node) {
             function exportNode(node) {
                 var exported = {};
                 exported.data = node.getData();
@@ -8864,8 +8756,7 @@ _p[68] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[69] = {
+ */_p[69] = {
     value: function(require, exports, module) {
         var template = _p.r(31);
         template.register("default", {
@@ -8898,8 +8789,7 @@ _p[69] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[70] = {
+ */_p[70] = {
     value: function(require, exports, module) {
         var template = _p.r(31);
         template.register("filetree", {
@@ -8926,8 +8816,7 @@ _p[70] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[71] = {
+ */_p[71] = {
     value: function(require, exports, module) {
         var template = _p.r(31);
         template.register("fish-bone", {
@@ -8968,8 +8857,7 @@ _p[71] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[72] = {
+ */_p[72] = {
     value: function(require, exports, module) {
         var template = _p.r(31);
         template.register("right", {
@@ -8992,8 +8880,7 @@ _p[72] = {
  *
  * @author: techird
  * @copyright: Baidu FEX, 2014
- */
-_p[73] = {
+ */_p[73] = {
     value: function(require, exports, module) {
         var template = _p.r(31);
         template.register("structure", {
@@ -9015,8 +8902,7 @@ _p[73] = {
  *
  * @author: along
  * @copyright: bpd729@163.com, 2015
- */
-_p[74] = {
+ */_p[74] = {
     value: function(require, exports, module) {
         var template = _p.r(31);
         template.register("tianpan", {
@@ -9042,8 +8928,7 @@ _p[75] = {
         var theme = _p.r(32);
         [ "classic", "classic-compact" ].forEach(function(name) {
             var compact = name == "classic-compact";
-            /* jscs:disable maximumLineLength */
-            theme.register(name, {
+            /* jscs:disable maximumLineLength */            theme.register(name, {
                 background: '#3A4144 url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoTWFjaW50b3NoKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDowQzg5QTQ0NDhENzgxMUUzOENGREE4QTg0RDgzRTZDNyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDowQzg5QTQ0NThENzgxMUUzOENGREE4QTg0RDgzRTZDNyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkMwOEQ1NDRGOEQ3NzExRTM4Q0ZEQThBODREODNFNkM3IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkMwOEQ1NDUwOEQ3NzExRTM4Q0ZEQThBODREODNFNkM3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+e9P33AAAACVJREFUeNpisXJ0YUACTAyoAMr/+eM7EGGRZ4FQ7BycEAZAgAEAHbEGtkoQm/wAAAAASUVORK5CYII=") repeat',
                 "root-color": "#430",
                 "root-background": "#e9df98",
@@ -9221,8 +9106,7 @@ _p[78] = {
         var theme = _p.r(32);
         [ "snow", "snow-compact" ].forEach(function(name) {
             var compact = name == "snow-compact";
-            /* jscs:disable maximumLineLength */
-            theme.register(name, {
+            /* jscs:disable maximumLineLength */            theme.register(name, {
                 background: '#3A4144 url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoTWFjaW50b3NoKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDowQzg5QTQ0NDhENzgxMUUzOENGREE4QTg0RDgzRTZDNyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDowQzg5QTQ0NThENzgxMUUzOENGREE4QTg0RDgzRTZDNyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkMwOEQ1NDRGOEQ3NzExRTM4Q0ZEQThBODREODNFNkM3IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkMwOEQ1NDUwOEQ3NzExRTM4Q0ZEQThBODREODNFNkM3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+e9P33AAAACVJREFUeNpisXJ0YUACTAyoAMr/+eM7EGGRZ4FQ7BycEAZAgAEAHbEGtkoQm/wAAAAASUVORK5CYII=") repeat',
                 "root-color": "#430",
                 "root-background": "#e9df98",
