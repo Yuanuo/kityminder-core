@@ -1,6 +1,6 @@
 /*!
  * ====================================================
- * Kity Minder Core - v1.4.51 - 2021-07-15
+ * Kity Minder Core - v1.4.51 - 2021-07-16
  * https://github.com/fex-team/kityminder-core
  * GitHub: https://github.com/fex-team/kityminder-core.git 
  * Copyright (c) 2021 Baidu FEX; Licensed BSD-3-Clause

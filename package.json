@@ -36,8 +36,7 @@
     }
   ],
   "dependencies": {
-    "kity": "file:../kity",
-    "seajs": "^3.0.3"
+    "kity": "file:../kity"
   },
   "devDependencies": {
     "cz-conventional-changelog": "^3.3.0",
@@ -50,7 +49,8 @@
     "grunt-contrib-watch": "^1.1.0",
     "grunt-module-dependence": "~0.2.1",
     "grunt-replace": "~2.0.2",
-    "uglify-js": "^3.13.10"
+    "uglify-js": "^3.13.10",
+    "seajs": "^3.0.3"
   },
   "config": {
     "commitizen": {
