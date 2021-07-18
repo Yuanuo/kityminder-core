@@ -1,6 +1,6 @@
 /*!
  * ====================================================
- * Kity Minder Core - v1.4.51 - 2021-07-16
+ * Kity Minder Core - v21.7.18 - 2021-07-18
  * https://github.com/fex-team/kityminder-core
  * GitHub: https://github.com/fex-team/kityminder-core.git 
  * Copyright (c) 2021 Baidu FEX; Licensed BSD-3-Clause
@@ -1945,7 +1945,7 @@ _p[18] = {
                 this.fire("finishInitHook");
             }
         });
-        Minder.version = "1.4.43";
+        Minder.version = "21.7.18";
         Minder.registerInitHook = function(hook) {
             _initHooks.push(hook);
         };
