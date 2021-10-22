@@ -55,7 +55,7 @@ define(function(require, exports, module) {
          * 判断节点是否叶子
          */
         isLeaf: function() {
-            return this.children.length === 0;
+            return this.children && this.children.length === 0;
         },
 
         /**

@@ -58,10 +58,13 @@ define(function(require, exports, module) {
             function exportNode(node) {
                 var exported = {};
                 exported.data = node.getData();
+
                 var childNodes = node.getChildren();
-                exported.children = [];
-                for (var i = 0; i < childNodes.length; i++) {
-                    exported.children.push(exportNode(childNodes[i]));
+                if (childNodes && childNodes.length && childNodes.length > 0) {
+                    exported.children = [];
+                    for (var i = 0; i < childNodes.length; i++) {
+                        exported.children.push(exportNode(childNodes[i]));
+                    }
                 }
                 return exported;
             }
@@ -73,8 +76,7 @@ define(function(require, exports, module) {
             json.template = this.getTemplate();
             json.theme = this.getTheme();
             json.version = Minder.version;
-
-            return JSON.parse(JSON.stringify(json));
+            return json; /* return JSON.parse(JSON.stringify(json)); */
         },
 
         /**
@@ -190,12 +192,7 @@ define(function(require, exports, module) {
          * @Date: 2015.9.20
          */
         importNode: function(node, json) {
-            var data = json.data;
-            node.data = {};
-
-            for (var field in data) {
-                node.setData(field, data[field]);
-            }
+            node.data = json.data;
 
             var childrenTreeData = json.children || [];
             for (var i = 0; i < childrenTreeData.length; i++) {
@@ -217,6 +214,19 @@ define(function(require, exports, module) {
         importJson: function(json) {
             if (!json) return;
 
+            return this.importWith(
+                function(minder, node) {
+                    json = compatibility(json);
+
+                    minder.importNode(node, json.root);
+                    return { 'template': json.template, 'theme': json.theme };
+                }
+            );
+        },
+
+        importWith: function(importing, node = null) {
+            if (!importing) return;
+
             /**
              * @event preimport
              * @for Minder
@@ -224,17 +234,19 @@ define(function(require, exports, module) {
              */
             this._fire(new MinderEvent('preimport', null, false));
 
-            // 删除当前所有节点
-            while (this._root.getChildren().length) {
-                this.removeNode(this._root.getChildren()[0]);
+            node = node || this._root;
+
+            // 删除所有节点
+            while (node.getChildren().length) {
+                this.removeNode(node.getChildren()[0]);
             }
 
-            json = compatibility(json);
+            const rootInfo = importing(this, node) || null;
 
-            this.importNode(this._root, json.root);
-
-            this.setTemplate(json.template || 'default');
-            this.setTheme(json.theme || null);
+            if (rootInfo) {
+                this.setTemplate(rootInfo.template || 'default');
+                this.setTheme(rootInfo.theme || null);
+            }
             this.refresh();
 
             /**

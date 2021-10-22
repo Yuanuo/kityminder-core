@@ -1,6 +1,6 @@
 /*!
  * ====================================================
- * Kity Minder Core - v21.7.18 - 2021-07-18
+ * Kity Minder Core - v21.8.18 - 2021-08-18
  * https://github.com/fex-team/kityminder-core
  * GitHub: https://github.com/fex-team/kityminder-core.git 
  * Copyright (c) 2021 Baidu FEX; Licensed BSD-3-Clause
@@ -782,9 +782,11 @@ _p[12] = {
                     var exported = {};
                     exported.data = node.getData();
                     var childNodes = node.getChildren();
-                    exported.children = [];
-                    for (var i = 0; i < childNodes.length; i++) {
-                        exported.children.push(exportNode(childNodes[i]));
+                    if (childNodes && childNodes.length && childNodes.length > 0) {
+                        exported.children = [];
+                        for (var i = 0; i < childNodes.length; i++) {
+                            exported.children.push(exportNode(childNodes[i]));
+                        }
                     }
                     return exported;
                 }
@@ -794,8 +796,8 @@ _p[12] = {
                 json.template = this.getTemplate();
                 json.theme = this.getTheme();
                 json.version = Minder.version;
-                return JSON.parse(JSON.stringify(json));
-            },
+                return json;
+ /* return JSON.parse(JSON.stringify(json)); */            },
             /**
          * function Text2Children(MinderNode, String) 
          * @param {MinderNode} node 要导入数据的节点
@@ -894,11 +896,7 @@ _p[12] = {
          * @Date: 2015.9.20
          */
             importNode: function(node, json) {
-                var data = json.data;
-                node.data = {};
-                for (var field in data) {
-                    node.setData(field, data[field]);
-                }
+                node.data = json.data;
                 var childrenTreeData = json.children || [];
                 for (var i = 0; i < childrenTreeData.length; i++) {
                     var childNode = this.createNode(null, node);
@@ -917,19 +915,32 @@ _p[12] = {
          */
             importJson: function(json) {
                 if (!json) return;
+                return this.importWith(function(minder, node) {
+                    json = compatibility(json);
+                    minder.importNode(node, json.root);
+                    return {
+                        template: json.template,
+                        theme: json.theme
+                    };
+                });
+            },
+            importWith: function(importing, node = null) {
+                if (!importing) return;
                 /**
              * @event preimport
              * @for Minder
              * @when 导入数据之前
              */                this._fire(new MinderEvent("preimport", null, false));
-                // 删除当前所有节点
-                while (this._root.getChildren().length) {
-                    this.removeNode(this._root.getChildren()[0]);
+                node = node || this._root;
+                // 删除所有节点
+                while (node.getChildren().length) {
+                    this.removeNode(node.getChildren()[0]);
                 }
-                json = compatibility(json);
-                this.importNode(this._root, json.root);
-                this.setTemplate(json.template || "default");
-                this.setTheme(json.theme || null);
+                const rootInfo = importing(this, node) || null;
+                if (rootInfo) {
+                    this.setTemplate(rootInfo.template || "default");
+                    this.setTheme(rootInfo.theme || null);
+                }
                 this.refresh();
                 /**
              * @event import,contentchange,interactchange
@@ -1945,7 +1956,7 @@ _p[18] = {
                 this.fire("finishInitHook");
             }
         });
-        Minder.version = "21.7.18";
+        Minder.version = "21.8.18";
         Minder.registerInitHook = function(hook) {
             _initHooks.push(hook);
         };
@@ -2124,7 +2135,7 @@ _p[21] = {
          * 判断节点是否叶子
          */
             isLeaf: function() {
-                return this.children.length === 0;
+                return this.children && this.children.length === 0;
             },
             /**
          * 获取节点的根节点
