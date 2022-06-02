@@ -290,6 +290,8 @@ define(function(require, exports, module) {
                         dx = e.wheelDeltaX || 0;
                         dy = e.wheelDeltaY || 0;
 
+                        /* hacked */
+                        if (dy > 500 || dy < -500) dy = dy / 50;
                     } else {
 
                         dx = 0;
