@@ -12,15 +12,25 @@ define(function(require, exports, module) {
     var Minder = require('./minder');
     var MinderEvent = require('./event');
 
+    let _disabled = false;
     Minder.registerInitHook(function(options) {
         if (options.readOnly) {
-            this.setDisabled();
+            _disabled = true;
+            try {
+                this.setDisabled();
+            } catch (err) {
+                console.log(err.message);
+            }
         }
     });
 
     kity.extendClass(Minder, {
+        isDisabled: function() {
+            return _disabled;
+        },
 
         disable: function() {
+            _disabled = true;
             var me = this;
             //禁用命令
             me.bkqueryCommandState = me.queryCommandState;

@@ -206,6 +206,10 @@ define(function(require, exports, module) {
             e.minder = this;
 
             var status = this.getStatus();
+            /* hacked */
+            if (this.isDisabled() && e.type === 'dblclick' && status === 'hand') {
+                return;
+            }
             var callbacks = this._eventCallbacks[e.type.toLowerCase()] || [];
 
             if (status) {
