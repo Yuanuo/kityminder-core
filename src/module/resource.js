@@ -198,7 +198,7 @@ define(function(require, exports, module) {
                 rect = this.rect = new kity.Rect().setRadius(4);
 
                 text = this.text = new kity.Text()
-                    .setFontSize(12)
+                    .setFontSize(16)
                     .setVerticalAlign('middle');
 
                 this.addShapes([rect, text]);

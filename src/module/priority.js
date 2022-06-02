@@ -57,7 +57,7 @@ define(function(require, exports, module) {
                     .setTextAnchor('middle')
                     .setVerticalAlign('middle')
                     .setFontItalic(true)
-                    .setFontSize(12)
+                    .setFontSize(16)
                     .fill('white');
 
                 this.addShapes([back, mask, number]);

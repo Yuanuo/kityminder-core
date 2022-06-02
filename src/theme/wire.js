@@ -8,7 +8,7 @@ define(function(require, exports, module) {
         'stroke': 'none',
         'padding': 10,
         'margin': 20,
-        'font-size': 14,
+        'font-size': 16,
 
         'connect-color': '#999',
         'connect-width': 1,
