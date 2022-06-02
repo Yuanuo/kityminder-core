@@ -30,7 +30,7 @@ define(function(require, exports, module) {
         }
     });
 
-    Minder.version = '21.8.18';
+    Minder.version = '22.06.02';
 
     Minder.registerInitHook = function(hook) {
         _initHooks.push(hook);

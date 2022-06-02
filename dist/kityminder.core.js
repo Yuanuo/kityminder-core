@@ -1,9 +1,9 @@
 /*!
  * ====================================================
- * Kity Minder Core - v21.8.18 - 2021-08-18
+ * Kity Minder Core - v22.06.02 - 2022-06-02
  * https://github.com/fex-team/kityminder-core
  * GitHub: https://github.com/fex-team/kityminder-core.git 
- * Copyright (c) 2021 Baidu FEX; Licensed BSD-3-Clause
+ * Copyright (c) 2022 Baidu FEX; Licensed BSD-3-Clause
  * ====================================================
  */
 
@@ -1222,6 +1222,9 @@ _p[13] = {
              */
                 e.minder = this;
                 var status = this.getStatus();
+                /* hacked */                if (this.isDisabled() && e.type === "dblclick" && status === "hand") {
+                    return;
+                }
                 var callbacks = this._eventCallbacks[e.type.toLowerCase()] || [];
                 if (status) {
                     callbacks = callbacks.concat(this._eventCallbacks[status + "." + e.type.toLowerCase()] || []);
@@ -1956,7 +1959,7 @@ _p[18] = {
                 this.fire("finishInitHook");
             }
         });
-        Minder.version = "21.8.18";
+        Minder.version = "22.06.02";
         Minder.registerInitHook = function(hook) {
             _initHooks.push(hook);
         };
@@ -2816,13 +2819,23 @@ _p[25] = {
         var kity = _p.r(17);
         var Minder = _p.r(19);
         var MinderEvent = _p.r(13);
+        let _disabled = false;
         Minder.registerInitHook(function(options) {
             if (options.readOnly) {
-                this.setDisabled();
+                _disabled = true;
+                try {
+                    this.setDisabled();
+                } catch (err) {
+                    console.log(err.message);
+                }
             }
         });
         kity.extendClass(Minder, {
+            isDisabled: function() {
+                return _disabled;
+            },
             disable: function() {
+                _disabled = true;
                 var me = this;
                 //禁用命令
                 me.bkqueryCommandState = me.queryCommandState;
@@ -6352,7 +6365,7 @@ _p[56] = {
                     white = new kity.Path().setPathData(MASK_PATH).fill("white");
                     back = new kity.Path().setPathData(BACK_PATH).setTranslate(.5, .5);
                     mask = new kity.Path().setPathData(MASK_PATH).setOpacity(.8).setTranslate(.5, .5);
-                    number = new kity.Text().setX(this.width / 2 - .5).setY(this.height / 2).setTextAnchor("middle").setVerticalAlign("middle").setFontItalic(true).setFontSize(12).fill("white");
+                    number = new kity.Text().setX(this.width / 2 - .5).setY(this.height / 2).setTextAnchor("middle").setVerticalAlign("middle").setFontItalic(true).setFontSize(16).fill("white");
                     this.addShapes([ back, mask, number ]);
                     this.mask = mask;
                     this.back = back;
@@ -6796,7 +6809,7 @@ _p[58] = {
                     this.callBase();
                     var text, rect;
                     rect = this.rect = new kity.Rect().setRadius(4);
-                    text = this.text = new kity.Text().setFontSize(12).setVerticalAlign("middle");
+                    text = this.text = new kity.Text().setFontSize(16).setVerticalAlign("middle");
                     this.addShapes([ rect, text ]);
                 },
                 setValue: function(resourceName, color) {
@@ -7627,6 +7640,7 @@ _p[62] = {
                         if ("wheelDeltaX" in e) {
                             dx = e.wheelDeltaX || 0;
                             dy = e.wheelDeltaY || 0;
+                            /* hacked */                            if (dy > 500 || dy < -500) dy = dy / 50;
                         } else {
                             dx = 0;
                             dy = e.wheelDelta;
@@ -8953,7 +8967,7 @@ _p[75] = {
                 "main-color": "#333",
                 "main-background": "#a4c5c0",
                 "main-stroke": "#a4c5c0",
-                "main-font-size": 16,
+                "main-font-size": 22,
                 "main-padding": compact ? [ 5, 15 ] : [ 6, 20 ],
                 "main-margin": compact ? [ 5, 10 ] : 20,
                 "main-radius": 10,
@@ -8962,7 +8976,7 @@ _p[75] = {
                 "sub-color": "white",
                 "sub-background": "transparent",
                 "sub-stroke": "none",
-                "sub-font-size": 12,
+                "sub-font-size": 18,
                 "sub-padding": [ 5, 10 ],
                 "sub-margin": compact ? [ 5, 10 ] : [ 15, 20 ],
                 "sub-tree-margin": 30,
@@ -9009,7 +9023,7 @@ _p[76] = {
             "main-color": "#333",
             "main-background": "#a4c5c0",
             "main-stroke": "#a4c5c0",
-            "main-font-size": 16,
+            "main-font-size": 22,
             "main-padding": [ 6, 20 ],
             "main-margin": [ 20, 20 ],
             "main-radius": 5,
@@ -9018,7 +9032,7 @@ _p[76] = {
             "sub-color": "black",
             "sub-background": "white",
             "sub-stroke": "white",
-            "sub-font-size": 12,
+            "sub-font-size": 18,
             "sub-padding": [ 5, 10 ],
             "sub-margin": [ 10 ],
             "sub-radius": 5,
@@ -9056,7 +9070,7 @@ _p[77] = {
                 "root-color": "white",
                 "root-background": hsl(h, 37, 60),
                 "root-stroke": hsl(h, 37, 60),
-                "root-font-size": 16,
+                "root-font-size": 24,
                 "root-padding": compat ? [ 6, 12 ] : [ 12, 24 ],
                 "root-margin": compat ? 10 : [ 30, 100 ],
                 "root-radius": 5,
@@ -9065,7 +9079,7 @@ _p[77] = {
                 "main-background": hsl(h, 33, 95),
                 "main-stroke": hsl(h, 37, 60),
                 "main-stroke-width": 1,
-                "main-font-size": 14,
+                "main-font-size": 22,
                 "main-padding": [ 6, 20 ],
                 "main-margin": compat ? 8 : 20,
                 "main-radius": 3,
@@ -9073,7 +9087,7 @@ _p[77] = {
                 "sub-color": "black",
                 "sub-background": "transparent",
                 "sub-stroke": "none",
-                "sub-font-size": 12,
+                "sub-font-size": 18,
                 "sub-padding": compat ? [ 3, 5 ] : [ 5, 10 ],
                 "sub-margin": compat ? [ 4, 8 ] : [ 15, 20 ],
                 "sub-radius": 5,
@@ -9131,7 +9145,7 @@ _p[78] = {
                 "main-color": "#333",
                 "main-background": "#a4c5c0",
                 "main-stroke": "#a4c5c0",
-                "main-font-size": 16,
+                "main-font-size": 22,
                 "main-padding": compact ? [ 4, 10 ] : [ 6, 20 ],
                 "main-margin": compact ? [ 5, 10 ] : [ 20, 40 ],
                 "main-radius": 5,
@@ -9140,7 +9154,7 @@ _p[78] = {
                 "sub-color": "black",
                 "sub-background": "white",
                 "sub-stroke": "white",
-                "sub-font-size": 12,
+                "sub-font-size": 18,
                 "sub-padding": [ 5, 10 ],
                 "sub-margin": compact ? [ 5, 10 ] : [ 10, 20 ],
                 "sub-radius": 5,
@@ -9186,7 +9200,7 @@ _p[79] = {
                 "main-color": "#333",
                 "main-background": "#a4c5c0",
                 "main-stroke": "#a4c5c0",
-                "main-font-size": 15,
+                "main-font-size": 22,
                 "main-padding": compact ? 10 : 12,
                 "main-margin": compact ? 10 : 12,
                 "main-radius": 10,
@@ -9196,7 +9210,7 @@ _p[79] = {
                 "sub-color": "#333",
                 "sub-background": "#99ca6a",
                 "sub-stroke": "#a4c5c0",
-                "sub-font-size": 13,
+                "sub-font-size": 18,
                 "sub-padding": 5,
                 "sub-margin": compact ? 6 : 10,
                 "sub-tree-margin": 30,
@@ -9237,7 +9251,7 @@ _p[80] = {
             stroke: "none",
             padding: 10,
             margin: 20,
-            "font-size": 14,
+            "font-size": 16,
             "connect-color": "#999",
             "connect-width": 1,
             "selected-background": "#999",
